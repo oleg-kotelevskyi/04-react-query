@@ -1,5 +1,5 @@
 import { useState, useEffect, type ComponentType } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import toast, { Toaster } from 'react-hot-toast';
 
 import ReactPaginateModule, { type ReactPaginateProps } from 'react-paginate';
@@ -23,10 +23,11 @@ export default function App() {
   const [page, setPage] = useState<number>(1);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
 
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error, isFetching } = useQuery({
     queryKey: ['movies', query, page],
     queryFn: () => fetchMovies(query, page),
-    enabled: query !== '',
+    enabled: query !== '', 
+    placeholderData: keepPreviousData,
   });
 
   useEffect(() => {
@@ -43,7 +44,7 @@ export default function App() {
 
   const handleSearchSubmit = (newQuery: string) => {
     setQuery(newQuery);
-    setPage(1);
+    setPage(1); 
   };
 
   const handleSelectMovie = (movie: Movie) => {
@@ -69,8 +70,10 @@ export default function App() {
 
         {isLoading && <Loader />}
 
-        {data && data.results.length > 0 && !isLoading && (
-          <MovieGrid movies={data.results} onSelect={handleSelectMovie} />
+        {data && data.results.length > 0 && (
+          <div style={{ opacity: isFetching ? 0.7 : 1, transition: 'opacity 200ms' }}>
+            <MovieGrid movies={data.results} onSelect={handleSelectMovie} />
+          </div>
         )}
 
         {showPagination && (
@@ -81,14 +84,13 @@ export default function App() {
               marginPagesDisplayed={1}
               onPageChange={({ selected }) => {
                 setPage(selected + 1);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                window.scrollTo({ top: 0, behavior: 'smooth' }); 
               }}
               forcePage={page - 1}
               containerClassName={css.pagination}
               activeClassName={css.active}
               nextLabel="→"
               previousLabel="←"
-              
               pageClassName={css.pageItem}
               previousClassName={css.pageItem}
               nextClassName={css.pageItem}
@@ -106,3 +108,4 @@ export default function App() {
     </div>
   );
 }
+
